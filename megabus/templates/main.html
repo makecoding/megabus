@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MeGaBus</title>
+</head>
+<body>
+    <font size="6" color="#47C83E"> <strong>메인화면</strong> </font>
+    </br>
+    {% ifequal mid 0 %}
+    <a href="/megabus/member/joinform">회원가입</a>
+    </br>
+    <a href="/megabus/member/loginform">로그인</a>
+    </br>
+    {% else %}
+    <a href="/megabus/member/logout">로그아웃</a>
+    </br>
+    {% endifequal %}
+    <a href="/megabus/takeonoff/busform">노선/정류장선택</a>
+    </br>
+    <a href="/megabus/member/loginform">선결제</a>
+    </br>
+    <a href="/megabus/mypage/mypage">마이페이지</a>
+    </br>
+
+</body>
+</html>

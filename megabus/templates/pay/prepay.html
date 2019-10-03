@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MeGaBus</title>
+</head>
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
+<script src="{% static 'js/jquery-3.4.1.min.js' %}"></script>
+<script>
+    function calcpay() {
+        var mcnt = document.frm.mcnt.value;
+        var amt = mcnt*1000;
+
+        document.getElementById("pamt").innerHTML = amt.toLocaleString();
+        document.frm.payamt.value = amt;
+    }
+
+    function fnChoice(obj) {
+        if (obj.checked) {
+            $('#gobtn').removeAttr("disabled");
+            if (obj.value==3) {
+                var mamt = document.frm.mileage.value;
+                var pamt = document.frm.payamt.value;
+                if (pamt>mamt) {
+                    document.getElementById("strmile").innerHTML = "마일리지가 부족합니다.";
+                    obj.checked = false;
+                    document.getElementById("gobtn").disabled='true';
+                }
+                else {
+                    document.getElementById("strmile").innerHTML = "결제시, 마일리지가 차감됩니다.";
+                }
+            }
+            else {
+            }
+        }
+    }
+
+
+</script>
+<body>
+    <p class="aa"> <strong>선결제</strong> </p>
+    <form name="frm" action="/megabus/pay/prepay" method="post">{% csrf_token %}
+        <input type="hidden" name="mid" value="{{ mid }}">
+        <input type="hidden" name="bnum" value="{{ bnum }}">
+        <input type="hidden" name="onstation" value="{{ onstation }}">
+        <input type="hidden" name="offstation" value="{{ offstation }}">
+        <input type="hidden" name="payamt" value="1000">
+        <input type="hidden" name="mileage" value="{{ mileage }}">
+        <table>
+            <tr>
+                <td>
+                    <label>(1) 승차인원수를 입력해주세요.</label>
+                </td>
+            </tr>
+            <tr>
+                <td height="2"></td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="number" name="mcnt" min="1" max="30" vocab="1" value="1" onchange="calcpay()">
+                </td>
+            </tr>
+            <tr>
+                <td height="30"></td>
+            </tr>
+            <tr>
+                <td>
+                    <label>(2) 총 결제 금액</label>
+                </td>
+            </tr>
+            <tr>
+                <td height="2"></td>
+            </tr>
+            <tr>
+                <td>
+                    <span id="pamt" style="font-size:25px;color:red;">1,000</span> 원
+                </td>
+            </tr>
+            <tr>
+                <td height="30"></td>
+            </tr>
+            <tr>
+                <td>
+                    <label>(3)결제수단 선택</label>
+                </td>
+            </tr>
+            <tr>
+                <td height="2"></td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="radio" name="paytype" value="1" onclick="fnChoice(this)" >체크카드
+                </td>
+            </tr>
+                <tr>
+                <td height="2"></td>
+            </tr>
+            <tr>
+                <td>
+                    <input type="radio" name="paytype" value="2"  onclick="fnChoice(this)">신용카드
+                </td>
+            </tr>
+                <tr>
+                <td height="2"></td>
+                        <tr>
+                <td>
+                    <input type="radio" name="paytype" value="3" onclick="fnChoice(this)">마일리지 &nbsp;[보유 마일리지 : {{ mileage }} P]
+                    </br>  <span id="strmile" style="font-size:12px;color:red;"></span>
+                </td>
+            </tr>
+            <tr>
+                <td height="2"></td>
+            </tr>
+
+        </table>
+        <table width="100%">
+            <tr>
+                <td align="center">
+                    <button type="submit" id="gobtn" style="color: #fff; background:#A566FF; font-size:1em; border-radius:0.5em; padding:3px 15px;" disabled>확인</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+</body>
+</html>

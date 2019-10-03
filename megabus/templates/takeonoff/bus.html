@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MeGaBus</title>
+</head>
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
+<script>
+    function setbus(bnum){
+        var cnt = bnum.options.length;
+        for (var i=0 ; i < cnt ; i++){
+            if (bnum.options[i].selected == true){
+                document.stopform.bnum.value = bnum.options[i].text
+                document.stopform.brid.value = bnum.options[i].value
+            }
+        }
+    }
+</script>
+<body>
+    <p class="aa"> <strong>정류장 등록</strong> </p>
+<table>
+    <tr>
+        <td>
+            <label>(1)버스번호 선택</label>
+        </td>
+    </tr>
+    <tr>
+        <td height="10"></td>
+    </tr>
+    <tr>
+        <td>
+            <form name="searchform" action="/megabus/takeonoff/busform" method="post">{% csrf_token %}
+                <input type="text" name="busnum" value="">&nbsp;
+                <button type="submit">검색</button>
+            </form>
+        </td>
+    </tr>
+    {% if busdic|length > 0 %}
+    <tr>
+        <td height="10"></td>
+    </tr>
+    <tr>
+        <td>
+            <select onchange="setbus(this);">
+                {% for item in busdic %}
+                <option value="{{ item.0 }}">{{ item.1 }}</option>
+                {% endfor %}
+            </select>
+        </td>
+    </tr>
+    <tr>
+        <td height="10"></td>
+    </tr>
+    <tr>
+        <td align="center">
+            <form name="stopform" action="/megabus/takeonoff/stopform" method="post">{% csrf_token %}
+                <input type="hidden" name="bnum" value="">
+                <input type="hidden" name="brid" value="">
+                <button type="submit">다음</button>
+            </form>
+        </td>
+    </tr>
+    {% endif %}
+    <tr>
+        <td height="30"></td>
+    </tr>
+
+    <tr>
+        <td>
+            <label>(2)즐겨찾기</label>
+        </td>
+    </tr>
+    <tr>
+        <td height="10"></td>
+    </tr>
+    <tr>
+        <td>
+            <table class="list">
+                <tr bgcolor="#E8D9FF" >
+                    <td align="center">버스번호</td>
+                    <td align="center">승차</td>
+                    <td align="center">하차</td>
+                    <td align="center">선택하기</td>
+                </tr>
+                <tr>
+                    <td align="center">1000번</td>
+                    <td align="center">마두역</td>
+                    <td align="center">대화역</td>
+                    <td align="center"><a href="">선택</a></td>
+                </tr>
+                <tr>
+                    <td align="center">2000번</td>
+                    <td align="center">백석역</td>
+                    <td align="center">정발산역</td>
+                    <td align="center"><a href="">선택</a></td>
+                </tr>
+            </table>
+            <table class="list">
+               <tr>
+                    <td align="center">
+                        <button type="button" style="color: #fff; background:#A566FF; font-size:1em; border-radius:0.5em; padding:3px 15px;" onclick="location.href='on.off_station.html'">선택</button>
+                    </td>
+                </tr>
+            </table >
+
+        </td>
+    </tr>
+    <tr>
+</table>
+</body>
+</html>

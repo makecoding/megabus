@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MeGaBus</title>
+</head>
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
+<body>
+    <p class="aa"> <strong>나의 이용내역</strong> </p>
+    <table class="list">
+        <tr bgcolor="#E8D9FF">
+            <td align="center">버스번호</td>
+            <td align="center">승차정류장</td>
+            <td align="center">하차정류장</td>
+            <td align="center">즐겨찾기</td>
+        </tr>
+        {% for item in rstlst %}
+        <tr>
+            <td align="center">{{ item.1 }}</td>
+            <td align="center">{{ item.2 }}</td>
+            <td align="center">{{ item.3 }}</td>
+            <td align="center"><a href="">등록</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+    <table border="0" width="300">
+        <tr>
+            <td align="center">
+                     <button type="button" style="color: #fff; background:#A566FF; font-size:1em; border-radius:0.5em; padding:3px 15px;"  onclick="location.href='mypage.html'">이전</button>
+            </td>
+        </tr>
+    </table >
+</body>
+</html>
