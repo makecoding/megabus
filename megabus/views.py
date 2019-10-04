@@ -4,9 +4,34 @@ from django.shortcuts import render
 import requests
 from bs4 import BeautifulSoup
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
+class GetLoginID(APIView):
+    #DB 사용 example
+    def get (self, request, format=None):
+        uid = request.GET['uid']
+        upw = request.GET['upw']
+
+        query = "select mid from megabus_member where id='%s' and upw='%s';" % (uid, upw)
+        cursor = connection.cursor()
+        row = cursor.execute(query)
+        mid = row.fetchone()
+
+        return Response(mid)
+
+class GetMid(APIView):
+    def get (self, request, format=None):
+
+        return Response(request.session['mid'])
+
+class GetStatus(APIView):
+    def get (self, request, format=None):
+
+        return Response(request.session['mstatus'])
+
+# 공통 알림페이지
 def notice(request):
-
 
     return render(request, 'notipage.html', {'msg':'하하하하하'})
 

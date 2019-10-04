@@ -7,58 +7,68 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
 <script>
-function gojoin(){
-    var frm = document.frm;
+    function gojoin(){
+        var frm = document.frm;
 
-    if (frm.uname.value.length < 2 ) {
-        alert("이름을 확인해 주세요.");
-        frm.uname.focus();
-        return false; // submit event 를 취소
+        if (frm.uname.value.length < 2 ) {
+            alert("이름을 확인해 주세요.");
+            frm.uname.focus();
+            return false; // submit event 를 취소
+        }
+
+        var uhp = frm.uphone.value;
+        uhp.replace("-", "");
+        if (uhp.length < 11) {
+            alert("핸드폰번호를 확인해주세요.");
+            frm.uphone.focus();
+            return false; // submit event 를 취소
+        }
+
+        if (frm.uid.value.length < 6) {
+            alert("아이디는 6글자 이상이어야 합니다.");
+            frm.uid.focus();
+            return false; // submit event 를 취소
+        }
+
+        if (frm.upw1.value.length == 0) {
+            alert("비밀번호를 입력하세요");
+            frm.upw1.focus();
+            return false;
+        }
+        else if (frm.upw1.value != frm.upw2.value) {
+            alert("비밀번호가 일치하지 않습니다.");
+            frm.upw2.value = "";
+            frm.upw2.focus();
+
+            return false;
+        }
+
+        return true;
     }
 
-    var uhp = frm.uphone.value;
-    uhp.replace("-", "");
-    if (uhp.length < 11) {
-        alert("핸드폰번호를 확인해주세요.");
-        frm.uphone.focus();
-        return false; // submit event 를 취소
-    }
 
-    if (frm.uid.value.length < 6) {
-        alert("아이디는 6글자 이상이어야 합니다.");
-        frm.uid.focus();
-        return false; // submit event 를 취소
+    function fnChoice(obj) {
+        if (obj.value=='Y') {
+             document.getElementById("strhandi").innerHTML = "장애인등록번호 <input type='text' name='handicapid'>";
+        }
+        else {
+            document.getElementById("strhandi").innerHTML = "";
+        }
     }
-
-    if (frm.upw1.value.length == 0) {
-        alert("비밀번호를 입력하세요");
-        frm.upw1.focus();
-        return false;
-    }
-    else if (frm.upw1.value != frm.upw2.value) {
-        alert("비밀번호가 일치하지 않습니다.");
-        frm.upw2.value = "";
-        frm.upw2.focus();
-
-        return false;
-    }
-
-    return true;
-}
 </script>
 <body>
     <p class="aa"> <strong>회원가입</strong> </p>
     <form name="frm" action="/megabus/member/join" method="POST" onsubmit="return gojoin()">{% csrf_token %}
         <table class="join">
-            <tr>
-                <td align="center">
+            <tr height="40px">
+                <td width="40%" align="center">
                     <label>이름</label>
                 </td>
                 <td align="center" colspan="2">
                     <input type=" text" name="uname" value="">
                 </td>
             </tr>
-            <tr>
+            <tr height="40px">
                 <td align="center">
                    <label>전화번호</label>
                 </td>
@@ -66,7 +76,7 @@ function gojoin(){
                     <input type="text" name="uphone" value="">
                 </td>
             </tr>
-                <tr>
+            <tr height="40px">
                 <td align="center">
                     <label>아이디</label>
                 </td>
@@ -74,7 +84,7 @@ function gojoin(){
                     <input type=" text" name="uid" value="">
                 </td>
             </tr>
-                    <tr>
+            <tr height="40px">
                 <td align="center">
                     <label>비밀번호</label>
                 </td>
@@ -82,25 +92,29 @@ function gojoin(){
                     <input type="password" name="upw1" value="">
                 </td>
             </tr>
-            <tr>
+            <tr height="40px">
                 <td align="center">
-                    <label>비밀번호 <br> 확인</label>
+                    <label>비밀번호 확인</label>
                 </td>
                 <td align="center" colspan="2">
                     <input type="password" name="upw2" value="">
                 </td>
             </tr>
-            <tr>
-                <td align="center">
+            <tr height="40px">
+                <td width="40%" align="center">
                     <label>장애인 등록</label>
                 </td>
-                <td align="center">
-                    <input type="radio" name="disabled" value="Y">예
-                    </br>
-                    장애인등록번호<input type="text" name="handicapid">
+                <td width="30%" align="center">
+                    <input type="radio" name="disabled" value="Y" onclick="fnChoice(this)">예
+
                 </td>
-                <td align="center">
-                    <input type="radio" name="disabled" value="N" checked>아니요
+                <td width="30%" align="center">
+                    <input type="radio" name="disabled" value="N" checked onclick="fnChoice(this)">아니요
+                </td>
+            </tr>
+            <tr  height="40px">
+                <td colspan="3" align="center">
+                    <span id="strhandi" style="font-size:12px;color:red;"></span>
                 </td>
             </tr>
         </table>
