@@ -7,38 +7,34 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
 <script>
-    function bookmark(id, ynval) {
-        alert(id);
+    function selectready(id, bnum) {
+
         document.frm.ulid.value = id;
-        document.frm.yn.value = ynval;
+        document.frm.bnum.value = bnum;
 
         document.frm.submit();
     }
 </script>
 <body>
-    <p class="aa"> <strong>나의 이용내역</strong> </p>
-    <form name="frm" action="/megabus/mypage/bookmark" method="post">{% csrf_token %}
+    <p class="aa"> <strong>승차 대기 신청</strong> </p>
+    <form name="frm" action="/megabus/takeonoff/ready" method="post">{% csrf_token %}
         <input type="hidden" name="ulid" value="">
-        <input type="hidden" name="yn" value="">
+        <input type="hidden" name="bnum" value="">
         <table class="list">
             <tr bgcolor="#E8D9FF">
-                <td align="center">id</td>
+                <td align="center">등록일</td>
                 <td align="center">버스번호</td>
                 <td align="center">승차정류장</td>
                 <td align="center">하차정류장</td>
-                <td align="center">즐겨찾기</td>
+                <td align="center">대기</td>
             </tr>
             {% for item in rstlst %}
             <tr>
-                <td align="center">{{ item.0 }}</td>
+                <td align="center">{{ item.4 }}</td>
                 <td align="center">{{ item.1 }}</td>
                 <td align="center">{{ item.2 }}</td>
                 <td align="center">{{ item.3 }}</td>
-                {% ifequal item.5 'N' %}
-                <td align="center"><a href="#" onclick="bookmark({{ item.0 }}, 'Y');">등록</a></td>
-                {% else %}
-                <td align="center"><a href="#" onclick="bookmark({{ item.0 }}, 'N');">취소</a></td>
-                {% endifequal %}
+                <td align="center"><a href="#" onclick="selectready({{ item.0 }},'{{ item.1 }}');">신청</a></td>
             </tr>
             {% endfor %}
         </table>

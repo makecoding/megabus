@@ -6,9 +6,28 @@
 </head>
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
+<script>
+function gonext(){
+    var frm = document.frm;
+
+    if (frm.uid.value.length < 6) {
+        alert("아이디는 6글자 이상이어야 합니다.");
+        frm.uid.focus();
+        return false; // submit event 를 취소
+    }
+
+    if (frm.upw.value.length == 0) {
+        alert("비밀번호를 입력하세요");
+        frm.upw.focus();
+        return false;
+    }
+
+    return true;
+}
+</script>
 <body>
     <p class="aa"> <strong>로그인</strong> </p>
-    <form name="frm" action="/megabus/member/login" method="POST">{% csrf_token %}
+    <form name="frm" action="/megabus/member/login" method="POST" onsubmit="return checklogin()">{% csrf_token %}
 
         <table class="join">
             <tr>

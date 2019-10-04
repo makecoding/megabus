@@ -1,12 +1,15 @@
-    p.aa{
+    p.aa {
         font-size:30px;
+        font-weight:bolder;
         color:#A566FF;
-        }
+    }
+
     table{
         border:1;
         width:100%;
         height:100px;
     }
+
     table.join{
          border:0;
          width:300px;

@@ -6,6 +6,9 @@ urlpatterns = [
     # http://127.0.0.1:8000/megabus/
     path('', views.index, name='index'),
 
+    path('notice', views.notice, name='notice'),
+
+
     path('member/joinform', views.joinform, name='joinform'),
     path('member/join', views.join, name='join'),
 
@@ -19,10 +22,20 @@ urlpatterns = [
     path('pay/prepayform', views.prepayform, name='prepayform'),
     path('pay/prepay', views.prepay, name='prepay'),
 
+    path('takeonoff/readyform', views.readyform, name='readyform'),
+    path('takeonoff/ready', views.ready, name='ready'),
+
+    path('qr/makeqr', views.makeqr, name='makeqr'),
+
     path('mypage/mypage', views.mypage, name='mypage'),
     path('mypage/uselist', views.uselist, name='uselist'),
     path('mypage/paylist', views.paylist, name='paylist'),
     path('mypage/mileagelist', views.mileagelist, name='mileagelist'),
+    path('mypage/bookmark', views.bookmark, name='bookmark'),
+
+
+    # 버스 단말기용 urls
+    path('bussys/bus_geton', views.bus_geton, name='bus_geton'),
 
 
 

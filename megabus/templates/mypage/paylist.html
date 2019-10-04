@@ -5,30 +5,30 @@
     <meta charset="UTF-8">
     <title>MeGaBus</title>
 </head>
-<link href="../style.css" rel="stylesheet" type="text/css">
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
 <body>
-    <p class="aa"> <strong>결제 내역</strong> </p>
-<table class="list">
+    <p class="aa"> <strong>선결제 내역</strong> </p>
+    <table class="list">
         <tr bgcolor="#E8D9FF">
+            <td align="center">id</td>
             <td align="center">날짜</td>
-            <td align="center">수단</td>
+            <td align="center">방식</td>
             <td align="center">금액</td>
         </tr>
+        {% for item in rstlst %}
         <tr>
-            <td align="center">7/8</td>
-            <td align="center">카드</td>
-            <td align="center">1800</td>
+            <td align="center">{{item.0}}</td>
+            <td align="center">{{item.3}}</td>
+            <td align="center">{{item.1}}</td>
+            <td align="center">{{item.2}}</td>
         </tr>
-        <tr>
-            <td align="center">8/7</td>
-            <td align="center">마일리지</td>
-            <td align="center">1100</td>
-        </tr>
-</table>
+        {% endfor %}
+    </table>
     <table  border="0" width="300" height="100">
         <tr>
             <td align="center">
-                     <button type="button" style="color: #fff; background:#A566FF; font-size:1em; border-radius:0.5em; padding:3px 15px;"  onclick="location.href='mypage.html'">이전</button>
+                     <button type="button" style="color: #fff; background:#A566FF; font-size:1em; border-radius:0.5em; padding:3px 15px;"  onclick="location.href='/megabus/mypage/mypage'">이전</button>
               </td>
         </tr>
     </table >

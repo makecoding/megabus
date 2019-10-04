@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <title>MeGaBus</title>
 </head>
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
 <body>
-    <font size="6" color="#47C83E"> <strong>메인화면</strong> </font>
+    <p class="aa"> <strong>메인 화면</strong> </p>
     </br>
     {% ifequal mid 0 %}
     <a href="/megabus/member/joinform">회원가입</a>
@@ -18,7 +20,9 @@
     {% endifequal %}
     <a href="/megabus/takeonoff/busform">노선/정류장선택</a>
     </br>
-    <a href="/megabus/member/loginform">선결제</a>
+    <a href="/megabus/takeonoff/readyform">승차대기</a>
+    </br>
+    <a href="/megabus/qr/makeqr">승차</a>
     </br>
     <a href="/megabus/mypage/mypage">마이페이지</a>
     </br>

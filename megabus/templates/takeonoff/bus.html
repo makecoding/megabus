@@ -16,6 +16,12 @@
             }
         }
     }
+    function bookmark(id) {
+        alert(id);
+        document.bmForm.ulid.value = id;
+
+        document.bmForm.submit();
+    }
 </script>
 <body>
     <p class="aa"> <strong>정류장 등록</strong> </p>
@@ -76,34 +82,25 @@
     </tr>
     <tr>
         <td>
-            <table class="list">
-                <tr bgcolor="#E8D9FF" >
-                    <td align="center">버스번호</td>
-                    <td align="center">승차</td>
-                    <td align="center">하차</td>
-                    <td align="center">선택하기</td>
-                </tr>
-                <tr>
-                    <td align="center">1000번</td>
-                    <td align="center">마두역</td>
-                    <td align="center">대화역</td>
-                    <td align="center"><a href="">선택</a></td>
-                </tr>
-                <tr>
-                    <td align="center">2000번</td>
-                    <td align="center">백석역</td>
-                    <td align="center">정발산역</td>
-                    <td align="center"><a href="">선택</a></td>
-                </tr>
-            </table>
-            <table class="list">
-               <tr>
-                    <td align="center">
-                        <button type="button" style="color: #fff; background:#A566FF; font-size:1em; border-radius:0.5em; padding:3px 15px;" onclick="location.href='on.off_station.html'">선택</button>
-                    </td>
-                </tr>
-            </table >
-
+            <form name="bmForm" action="/megabus/takeonoff/stopform" method="post">{% csrf_token %}
+                <input type="hidden" name="ulid" value="">
+                <table class="list">
+                    <tr bgcolor="#E8D9FF" >
+                        <td align="center">버스번호</td>
+                        <td align="center">승차</td>
+                        <td align="center">하차</td>
+                        <td align="center">선택하기</td>
+                    </tr>
+                    {% for item in bookmark %}
+                    <tr>
+                        <td align="center">{{item.1}}</td>
+                        <td align="center">{{item.2}}</td>
+                        <td align="center">{{item.3}}</td>
+                        <td align="center"><a href="#" onclick="bookmark({{ item.0 }});">선택</a></td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </form>
         </td>
     </tr>
     <tr>

@@ -43,10 +43,13 @@
     <form name="frm" action="/megabus/pay/prepay" method="post">{% csrf_token %}
         <input type="hidden" name="mid" value="{{ mid }}">
         <input type="hidden" name="bnum" value="{{ bnum }}">
-        <input type="hidden" name="onstation" value="{{ onstation }}">
-        <input type="hidden" name="offstation" value="{{ offstation }}">
+        <input type="hidden" name="onbsid" value="{{ onbsid }}">
+        <input type="hidden" name="onbsname" value="{{ onbsname }}">
+        <input type="hidden" name="offbsid" value="{{ offbsid }}">
+        <input type="hidden" name="offbsname" value="{{ offbsname }}">
         <input type="hidden" name="payamt" value="1000">
         <input type="hidden" name="mileage" value="{{ mileage }}">
+        <input type="hidden" name="alarm" value="{{ mileage }}">
         <table>
             <tr>
                 <td>

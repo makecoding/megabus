@@ -8,10 +8,10 @@
 <link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
 
 <script>
-
 function gonext(){
     var frm = document.frm;
 
+    {% ifequal type 'S' %}
     var cnt = frm.onstation.options.length;
     for (var i=0 ; i < cnt ; i++){
         if (frm.onstation.options[i].selected == true){
@@ -26,8 +26,14 @@ function gonext(){
             frm.offbsid.value = frm.offstation.options[i].value
         }
     }
+    {% endifequal %}
 
-    if (frm.prepay.value=='Y' ) {
+    if (frm.alarmchb.checked) {
+        frm.alarm.value = "Y";
+    }
+
+    alert(frm.prepay.checked);
+    if (frm.prepay.checked) {
         frm.action="/megabus/pay/prepayform";
     }
     else {
@@ -38,8 +44,13 @@ function gonext(){
 }
 </script>
 <body>
-    <p class="aa"> <strong>정류장 등록 및 선결제</strong> </p>
+    {% ifequal type 'S' %}
+    <p class="aa"> <strong>정류장 등록 및 결제 신청</strong> </p>
+    {% else %}
+    <p class="aa"> <strong>결제 신청</strong> </p>
+    {% endifequal %}
     <form name="frm" action="" method="POST" onsubmit="return gonext()">{% csrf_token %}
+        {% ifequal type 'S' %}
         <input type="hidden" name="bnum" value="{{ bnum }}">
         <input type="hidden" name="onbsid" value="">
         <input type="hidden" name="onbsname" value="">
@@ -47,6 +58,7 @@ function gonext(){
         <input type="hidden" name="offbsname" value="">
         <input type="hidden" name="payamt" value="">
         <input type="hidden" name="paytype" value="">
+        <input type="hidden" name="alarm" value="N">
         <table>
             <tr>
                 <td>
@@ -89,19 +101,48 @@ function gonext(){
             <tr>
                 <td height="30"></td>
             </tr>
+        </table>
+        {% else %}
+        <input type="hidden" name="bnum" value="{{ bookmark.0 }}">
+        <input type="hidden" name="onbsid" value="{{bookmark.1}}">
+        <input type="hidden" name="onbsname" value="{{bookmark.2}}">
+        <input type="hidden" name="offbsid" value="{{bookmark.3}}">
+        <input type="hidden" name="offbsname" value="{{bookmark.4}}">
+        <input type="hidden" name="payamt" value="">
+        <input type="hidden" name="paytype" value="">
+        <input type="hidden" name="alarm" value="N">
+        <table>
             <tr>
                 <td>
-                    <label>선결제를 하시겠습니까?</label>
+                    <label>(1)승차 정류장</label> : {{ bookmark.2 }}
                 </td>
             </tr>
             <tr>
-                <td height="10"></td>
+                <td height="30"></td>
+            </tr>
+
+            <tr>
+                <td>
+                    <label>(2)하차 정류장</label> : {{ bookmark.4 }}
+                </td>
+            </tr>
+            <tr>
+                <td height="30"></td>
+            </tr>
+        </table>
+        {% endifequal %}
+        <table>
+            <tr>
+                <td>
+                    <input type="checkbox" name="alarmchb"> <label>승하차 알림서비스를 등록하시겠습니까?</label>
+                </td>
+            </tr>
+            <tr>
+                <td height="30"></td>
             </tr>
             <tr>
                 <td>
-                    <input type="radio" name="prepay" value="Y">예
-                    <input type="radio" name="prepay" checked value="N">아니요
-
+                    <input type="checkbox" name="prepay"> <label>선결제를 하시겠습니까?</label>
                 </td>
             </tr>
         </table>
