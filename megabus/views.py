@@ -174,12 +174,12 @@ def stopform(request):
         for i, val in enumerate(nameList):
             rst.append([idlist[i].text, nameList[i].text, goallst[i].text])
 
-        return render(request, 'takeonoff/onoffstop.html', {'stationlst': rst, 'bnum': bnum, 'type':'S'})
+        return render(request, 'takeonoff/onoffstop.html', {'stationlst': rst, 'brid': brid, 'bnum': bnum, 'type':'S'})
 
     else:
         ulid = request.POST['ulid']
 
-        query = "select bnid, onbsid, onbsname, offbsid, offbsname from megabus_uselist where ulid=%d;" % int(ulid)
+        query = "select bnid, bnname, onbsid, onbsname, offbsid, offbsname from megabus_uselist where ulid=%d;" % int(ulid)
         print(query)
         cursor = connection.cursor()
         row = cursor.execute(query)
@@ -191,6 +191,8 @@ def stopform(request):
 
 # 선결제 페이지
 def prepayform(request):
+    brid = request.POST['brid']
+    print("prepayform brid:" + brid)
     bnum = request.POST['bnum']
     print("prepayform bnum:" + bnum)
     onbsid = request.POST['onbsid']
@@ -209,7 +211,7 @@ def prepayform(request):
         row = cursor.execute(query)
         mileage = row.fetchone()[0]
 
-        dic = {'mid': mid,"onbsid":onbsid,"onbsname":onbsname,"offbsid":offbsid,"offbsname":offbsname,'bnum':bnum, 'mileage':mileage, 'alarm':alarm}
+        dic = {'mid': mid,"onbsid":onbsid,"onbsname":onbsname,"offbsid":offbsid,"offbsname":offbsname,'brid':brid,'bnum':bnum, 'mileage':mileage, 'alarm':alarm}
 
         return render(request, 'pay/prepay.html', dic)
     else:
@@ -218,20 +220,30 @@ def prepayform(request):
 
 # 선결제 logic
 def prepay(request):
+    brid = request.POST['brid']
+    print("prepay brid:" + brid)
     bnum = request.POST['bnum']
     print("prepay bnum:" + bnum)
     onbsid = request.POST['onbsid']
+    print("prepay onbsid:" + onbsid)
     onbsname = request.POST['onbsname']
+    print("prepay onbsname:" + onbsname)
     offbsid = request.POST['offbsid']
+    print("prepay offbsid:" + offbsid)
     offbsname = request.POST['offbsname']
+    print("prepay offbsname:" + offbsname)
     payamt = request.POST['payamt']
+    print("prepay payamt:" + payamt)
     paytype = request.POST['paytype']
+    print("prepay paytype:" + paytype)
     alarm = request.POST['alarm']
+    print("prepay alarm:" + alarm)
+
 
     mid = request.session['mid']
     # 승하차 등록 내역 저장
-    query = "insert into megabus_uselist (mid, bnid, onbsid, onbsname, offbsid, offbsname, pid, payamt, alarm)" \
-            "  values(%d, '%s', '%s','%s', '%s','%s', '%s', '%s', '%s')" % (int(mid), bnum, onbsid, onbsname, offbsid, offbsname,paytype, payamt, alarm)
+    query = "insert into megabus_uselist (mid, bnid, bnname, onbsid, onbsname, offbsid, offbsname, pid, payamt, alarm)" \
+            "  values (%d, %d, '%s', %d, '%s', %d, '%s', '%s', '%s', '%s')" % (int(mid), int(brid), bnum, int(onbsid), onbsname, int(offbsid), offbsname, paytype, payamt, alarm)
     print(query)
     cursor = connection.cursor()
     cursor.execute(query)
@@ -267,7 +279,7 @@ def readyform (request):
     print("readyform mid:" + str(mid))
 
     # 버스노선 이용내역
-    query = "select ulid, bnid, onbsname, offbsname, usedate from megabus_uselist " \
+    query = "select ulid, bnname, onbsname, offbsname, usedate from megabus_uselist " \
             "where mid=%d and status='R' order by usedate desc;" % int(mid)
     print(query)
     cursor = connection.cursor()
@@ -278,14 +290,15 @@ def readyform (request):
 
     return render(request, 'takeonoff/readyform.html', dic)
 
+# 승차대기
 def ready(request):
     mid = request.session['mid']
     print("ready mid:" + str(mid))
 
     useid = request.POST['ulid']
-    bnum = request.POST['bnum']
+    brid = request.POST['brid']
     request.session['useid'] = useid
-    request.session['bnum'] = bnum
+    request.session['brid'] = brid
 
     request.session['mstatus'] = "R"
 

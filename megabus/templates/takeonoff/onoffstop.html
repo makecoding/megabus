@@ -51,6 +51,7 @@ function gonext(){
     {% endifequal %}
     <form name="frm" action="" method="POST" onsubmit="return gonext()">{% csrf_token %}
         {% ifequal type 'S' %}
+        <input type="hidden" name="brid" value="{{ brid }}">
         <input type="hidden" name="bnum" value="{{ bnum }}">
         <input type="hidden" name="onbsid" value="">
         <input type="hidden" name="onbsname" value="">
@@ -103,18 +104,19 @@ function gonext(){
             </tr>
         </table>
         {% else %}
-        <input type="hidden" name="bnum" value="{{ bookmark.0 }}">
-        <input type="hidden" name="onbsid" value="{{bookmark.1}}">
-        <input type="hidden" name="onbsname" value="{{bookmark.2}}">
-        <input type="hidden" name="offbsid" value="{{bookmark.3}}">
-        <input type="hidden" name="offbsname" value="{{bookmark.4}}">
+        <input type="hidden" name="brid" value="{{ bookmark.0 }}">
+        <input type="hidden" name="bnum" value="{{ bookmark.1 }}">
+        <input type="hidden" name="onbsid" value="{{bookmark.2}}">
+        <input type="hidden" name="onbsname" value="{{bookmark.3}}">
+        <input type="hidden" name="offbsid" value="{{bookmark.4}}">
+        <input type="hidden" name="offbsname" value="{{bookmark.5}}">
         <input type="hidden" name="payamt" value="">
         <input type="hidden" name="paytype" value="">
         <input type="hidden" name="alarm" value="N">
         <table>
             <tr>
                 <td>
-                    <label>(1)승차 정류장</label> : {{ bookmark.2 }}
+                    <label>(1)승차 정류장</label> : {{ bookmark.3 }}
                 </td>
             </tr>
             <tr>
@@ -123,7 +125,7 @@ function gonext(){
 
             <tr>
                 <td>
-                    <label>(2)하차 정류장</label> : {{ bookmark.4 }}
+                    <label>(2)하차 정류장</label> : {{ bookmark.5 }}
                 </td>
             </tr>
             <tr>
