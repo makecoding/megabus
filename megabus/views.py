@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+# API call은 session 사용 불가
 class GetLoginID(APIView):
     #DB 사용 example
     def get (self, request, format=None):
@@ -30,10 +31,54 @@ class GetStatus(APIView):
 
         return Response(request.session['mstatus'])
 
+class GetBusid(APIView):
+    def get (self, request, format=None):
+        return Response(request.session['vehid'])
+
+class IsArrive(APIView):
+    def get(self, request, format=None):
+
+        # 특정노선(예:1000번 버스노선)의 하차 정류장 도착 순서에 따른 차량id 추출 openAPI 연동 REST [XML]
+        url = 'http://ws.bus.go.kr/api/rest/arrive/getArrInfoByRoute'
+        keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
+        param1 = '&stId=%s&busRouteId=%s&ord=%s' % (
+            request.session['offbsid'], request.session['brid'], request.session['offord'])
+
+        print(url + keystr + param1)
+        response = requests.get(url + keystr + param1)
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # soup의 모든 node는 소문자
+        vehid1 = soup.find('vehid1').text
+        print(vehid1)
+        vehid2 = soup.find('vehid2').text
+        print(vehid2)
+        
+        rst = "N"
+        # 하차정류장 접근 버스가 현재 탑승버스와 동인한 경우
+        if request.session['vehid']==vehid2:
+            rst = "Y"
+
+        return Response(rst)
+
 # 공통 알림페이지
 def notice(request):
 
     return render(request, 'notipage.html', {'msg':'하하하하하'})
+
+
+def mindex(request):
+    mid = request.GET["mid"]
+    print("mindex mid : " + str(mid))
+
+    request.session['mid'] = mid
+
+    # 사용자 상태에 따라 메인 메뉴 구성 달라짐
+    # stat = ''
+    # if request.session.has_key('mstatus'):
+    #     stat = request.session['mstatus']
+
+    return render(request, 'main.html', {'mid': mid})
 
 def index(request):
     mid = 0
@@ -92,7 +137,7 @@ def login(request):
 
     if rst:
         mid = rst
-        request.session['mid'] =mid
+        request.session['mid'] = mid
 
         print("로그인 성공!!!")
         return render(request, 'main.html', {'mid': mid})
@@ -110,11 +155,13 @@ def logout(request):
 
 # 버스번호 또는 북마크 선택
 def busform(request):
+    #mid = request.POST['mid']
     mid = request.session['mid']
+
     print("readyform mid:" + str(mid))
 
     # bookmark 목록 가져오기
-    query = "select ulid, bnid, onbsname, offbsname from megabus_uselist " \
+    query = "select ulid, brid, onbsname, offbsname from megabus_uselist " \
             "where mid=%d and bookmark='Y' order by usedate desc;" % int(mid)
     print(query)
     cursor = connection.cursor()
@@ -151,6 +198,7 @@ def busform(request):
 
 # 노선 선택
 def stopform(request):
+    # 즐겨찾기 선택 안함.
     if 'ulid' not in list(request.POST.keys()):
         bnum = request.POST['bnum']
         print("stopform bnum:"+bnum)
@@ -168,18 +216,21 @@ def stopform(request):
         # soup의 모든 node는 소문자
         idlist = soup.findAll('station')
         nameList = soup.findAll('stationnm')
+        noList = soup.findAll('stationno')
         goallst = soup.findAll('direction')
+        ordlist = soup.findAll('seq')
 
         rst = []
         for i, val in enumerate(nameList):
-            rst.append([idlist[i].text, nameList[i].text, goallst[i].text])
+            if noList[i].text != "미정차":
+                rst.append([idlist[i].text, nameList[i].text, goallst[i].text, ordlist[i].text])
 
         return render(request, 'takeonoff/onoffstop.html', {'stationlst': rst, 'brid': brid, 'bnum': bnum, 'type':'S'})
-
+    # 즐겨찾기 선택
     else:
         ulid = request.POST['ulid']
 
-        query = "select bnid, bnname, onbsid, onbsname, offbsid, offbsname from megabus_uselist where ulid=%d;" % int(ulid)
+        query = "select brid, bnname, onbsid, onbsname, onord, offbsid, offbsname, offord from megabus_uselist where ulid=%d;" % int(ulid)
         print(query)
         cursor = connection.cursor()
         row = cursor.execute(query)
@@ -197,8 +248,10 @@ def prepayform(request):
     print("prepayform bnum:" + bnum)
     onbsid = request.POST['onbsid']
     onbsname = request.POST['onbsname']
+    onord = request.POST['onord']
     offbsid = request.POST['offbsid']
     offbsname = request.POST['offbsname']
+    offord = request.POST['offord']
     alarm = request.POST['alarm']
 
     mid = request.session['mid']
@@ -211,7 +264,8 @@ def prepayform(request):
         row = cursor.execute(query)
         mileage = row.fetchone()[0]
 
-        dic = {'mid': mid,"onbsid":onbsid,"onbsname":onbsname,"offbsid":offbsid,"offbsname":offbsname,'brid':brid,'bnum':bnum, 'mileage':mileage, 'alarm':alarm}
+        dic = {'mid': mid,"onbsid":onbsid,"onbsname":onbsname,"onord":onord,"offbsid":offbsid,"offbsname":offbsname,"offord":offord,
+        'brid':brid,'bnum':bnum, 'mileage':mileage, 'alarm':alarm}
 
         return render(request, 'pay/prepay.html', dic)
     else:
@@ -221,29 +275,25 @@ def prepayform(request):
 # 선결제 logic
 def prepay(request):
     brid = request.POST['brid']
-    print("prepay brid:" + brid)
     bnum = request.POST['bnum']
-    print("prepay bnum:" + bnum)
     onbsid = request.POST['onbsid']
-    print("prepay onbsid:" + onbsid)
     onbsname = request.POST['onbsname']
-    print("prepay onbsname:" + onbsname)
+    onord = request.POST['onord']
     offbsid = request.POST['offbsid']
     print("prepay offbsid:" + offbsid)
     offbsname = request.POST['offbsname']
     print("prepay offbsname:" + offbsname)
+    offord = request.POST['offord']
+    print("prepay offord:" + offord)
     payamt = request.POST['payamt']
-    print("prepay payamt:" + payamt)
     paytype = request.POST['paytype']
-    print("prepay paytype:" + paytype)
     alarm = request.POST['alarm']
-    print("prepay alarm:" + alarm)
-
 
     mid = request.session['mid']
     # 승하차 등록 내역 저장
-    query = "insert into megabus_uselist (mid, bnid, bnname, onbsid, onbsname, offbsid, offbsname, pid, payamt, alarm)" \
-            "  values (%d, %d, '%s', %d, '%s', %d, '%s', '%s', '%s', '%s')" % (int(mid), int(brid), bnum, int(onbsid), onbsname, int(offbsid), offbsname, paytype, payamt, alarm)
+    query = "insert into megabus_uselist (mid, brid, bnname, onbsid, onbsname, onord, offbsid, offbsname, offord, pid, payamt, alarm)" \
+            "  values (%d, %d, '%s', %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s')"\
+            % (int(mid), int(brid), bnum, int(onbsid), onbsname, int(onord), int(offbsid), offbsname, int(offord), paytype, payamt, alarm)
     print(query)
     cursor = connection.cursor()
     cursor.execute(query)
@@ -296,11 +346,43 @@ def ready(request):
     print("ready mid:" + str(mid))
 
     useid = request.POST['ulid']
-    brid = request.POST['brid']
-    request.session['useid'] = useid
-    request.session['brid'] = brid
 
+    # 버스노선 이용내역
+    query = "select brid, bnname, onbsid, onord, offbsid, offord from megabus_uselist " \
+            "where ulid=%d and status='R' order by usedate desc;" % int(useid)
+    print(query)
+    cursor = connection.cursor()
+    row = cursor.execute(query)
+    rst = row.fetchone()
+
+    request.session['useid'] = useid
+    request.session['brid'] = rst[0]
+    request.session['bnname'] = rst[1]
+    request.session['onbsid'] = rst[2]
+    request.session['onord'] = rst[3]
+    request.session['offbsid'] = rst[4]
+    request.session['offord'] = rst[5]
     request.session['mstatus'] = "R"
+    print(request.session['mstatus'])
+
+    # 특정노선(예:1000번 버스노선)의 특정 정류장 도착 순서에 따른 차량id 추출 openAPI 연동 REST [XML]
+    url = 'http://ws.bus.go.kr/api/rest/arrive/getArrInfoByRoute'
+    keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
+    param1 = '&stId=%s&busRouteId=%s&ord=%s' % (
+    request.session['onbsid'], request.session['brid'], request.session['onord'])
+
+    print(url + keystr + param1)
+    response = requests.get(url + keystr + param1)
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    # soup의 모든 node는 소문자
+    vehid1 = soup.find('vehid1').text
+    print(vehid1)
+    vehid2 = soup.find('vehid2').text
+    print(vehid2)
+
+    # 승차버스 아이디 준비
+    request.session['vehid'] = vehid1
 
     return render(request, 'main.html')
 
@@ -315,7 +397,7 @@ def mypage(request):
     row = cursor.execute(query)
     mileage = row.fetchone()[0]
 
-    if mid > 0:
+    if int(mid) > 0:
         dic = {'mid': mid, 'mileage': mileage}
 
         return render(request, 'mypage/mypage.html', dic)
@@ -327,7 +409,7 @@ def uselist(request):
     mid = request.session['mid']
     print("uselist mid:" + str(mid))
 
-    if mid > 0:
+    if int(mid) > 0:
         # 버스노선 이용내역
         query = "select ulid, bnid, onbsname, offbsname, usedate, bookmark from megabus_uselist " \
                 "where mid=%d order by usedate desc;" % int(mid)
@@ -347,7 +429,7 @@ def paylist(request):
     mid = request.session['mid']
     print("uselist mid:" + str(mid))
 
-    if mid > 0:
+    if int(mid) > 0:
         # 결제 내역
         query = "select a.ulid, b.payname, a.payamt , a.usedate " \
                 "from megabus_uselist a, megabus_paytype b where a.pid = b.pid and a.mid=%d and a.pid  notnull " \
@@ -368,7 +450,7 @@ def mileagelist(request):
     mid = request.session['mid']
     print("uselist mid:" + str(mid))
 
-    if mid > 0:
+    if int(mid) > 0:
         # 마일리지 사용 내역
         query = "select cretype, creamt, credate, crewhere " \
                 "from megabus_mileage " \
@@ -404,7 +486,7 @@ def bookmark(request):
 
     return render(request, 'main.html')
 
-
+# 승차 QR 코드 생성
 def makeqr(request):
     mid = request.session['mid']
     print("makeqr mid:" + str(mid))
@@ -418,38 +500,14 @@ def makeqr(request):
 
     return render(request, 'qr/QRcode.html', {'qr': qr})
 
-#버스 단말기 용
-# 승차 태깅 처리
-def bus_geton(request):
-    # 버스단말기 qr태킹에서 넘어온 사용자 id
-    mid = request.GET['mid']
-    print("bus_take mid:" + mid)
+# 하차 태깅 처리 > 버스 앱 하차용qr에 고정 url로 세팅됨.
+def bus_getoff(request):
     # 승차등록에서 설정된 이용id
     useid = request.session['useid']
-    print("bus_take useid:" + useid)
+    print("bus_getoff useid:" + useid)
 
     # 이용상태 탑승으로 변경
-    query = "update megabus_uselist set status='ON' where ulid=%d ;" % int(useid)
-    print(query)
-    cursor = connection.cursor()
-    cursor.execute(query)
-    connection.commit()
-
-    request.session['mstatus'] = "ON"
-
-    return render(request, 'member/login.html')
-
-# 하차 태깅 처리 > 버스 앱 하차용qr에 고정 url로 세팅됨.
-def bus_geton(request):
-    # 버스단말기 qr태킹에서 넘어온 사용자 id
-    mid = request.session['mid']
-    print("bus_geton mid:" + mid)
-    # 승차등록에서 설정된 이용id
-    useid = request.session['useid']
-    print("bus_geton useid:" + useid)
-
-    # 이용상태 하차상태로 변경
-    query = "update megabus_uselist set status='OFF' where mid=%d and status='OFF';" % int(mid)
+    query = "update megabus_uselist set status='OFF' where ulid=%d ;" % (int(useid))
     print(query)
     cursor = connection.cursor()
     cursor.execute(query)
@@ -458,3 +516,41 @@ def bus_geton(request):
     request.session['mstatus'] = "OFF"
 
     return render(request, 'member/login.html')
+
+
+#버스 단말기 용
+# 승차 태깅 처리 (차량 배정 /
+def bus_geton(request):
+    # 버스단말기 qr태킹에서 넘어온 사용자 id
+    mid = request.GET['mid']
+    print("bus_take mid:" + mid)
+
+    # 승차등록에서 설정된 이용id
+    useid = request.session['useid']
+    print("bus_take useid:" + useid)
+
+    # 현재 차량아이디를 등록함.
+    bnid = request.session['vehid']
+
+    # 이용상태 탑승으로 변경
+    query = "update megabus_uselist set status='ON', bnid=%d where ulid=%d ;" % (int(bnid), int(useid))
+    print(query)
+    cursor = connection.cursor()
+    cursor.execute(query)
+    connection.commit()
+
+    request.session['mstatus'] = "ON"
+
+    return render(request, 'main.html')
+
+# 차량용 QR 코드 생성
+def bus_makeqr(request):
+    bnid = request.session['vehid']
+
+    # local용
+    homeurl = "http://127.0.0.1:8000/megabus/bussys/bus_getoff"
+    # real용
+    # homeurl = "http://makecoding.pythonanywhere.com/megabus/bussys/bus_getoff"
+    qr = "https://chart.googleapis.com/chart?cht=qr&chl=%s&chs=200x200" % (homeurl)
+
+    return render(request, 'qr/QRcode.html', {'qr': qr})

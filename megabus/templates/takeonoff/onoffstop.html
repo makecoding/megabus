@@ -15,15 +15,19 @@ function gonext(){
     var cnt = frm.onstation.options.length;
     for (var i=0 ; i < cnt ; i++){
         if (frm.onstation.options[i].selected == true){
-            frm.onbsname.value = frm.offstation.options[i].text
-            frm.onbsid.value = frm.offstation.options[i].value
+            var info = frm.onstation.options[i].value.split(":");
+            frm.onbsname.value = frm.onstation.options[i].text;
+            frm.onbsid.value = info[0];
+            frm.onord.value = info[1];
         }
     }
     cnt = frm.offstation.options.length;
     for (var i=0 ; i < cnt ; i++){
         if (frm.offstation.options[i].selected == true){
-            frm.offbsname.value = frm.offstation.options[i].text
-            frm.offbsid.value = frm.offstation.options[i].value
+            var info = frm.offstation.options[i].value.split(":");
+            frm.offbsname.value = frm.offstation.options[i].text;
+            frm.offbsid.value = info[0];
+            frm.offord.value = info[1];
         }
     }
     {% endifequal %}
@@ -32,7 +36,6 @@ function gonext(){
         frm.alarm.value = "Y";
     }
 
-    alert(frm.prepay.checked);
     if (frm.prepay.checked) {
         frm.action="/megabus/pay/prepayform";
     }
@@ -55,8 +58,10 @@ function gonext(){
         <input type="hidden" name="bnum" value="{{ bnum }}">
         <input type="hidden" name="onbsid" value="">
         <input type="hidden" name="onbsname" value="">
+        <input type="hidden" name="onord" value="">
         <input type="hidden" name="offbsid" value="">
         <input type="hidden" name="offbsname" value="">
+        <input type="hidden" name="offord" value="">
         <input type="hidden" name="payamt" value="">
         <input type="hidden" name="paytype" value="">
         <input type="hidden" name="alarm" value="N">
@@ -73,7 +78,7 @@ function gonext(){
                 <td>
                     <select name="onstation">
                         {% for item in stationlst %}
-                        <option value="{{ item.0 }}">{{ item.1 }} >> {{ item.2 }}</option>
+                        <option value="{{ item.0 }}:{{ item.3 }}">{{ item.1 }} >> {{ item.2 }}</option>
                         {% endfor %}
                     </select>
                 </td>
@@ -94,7 +99,7 @@ function gonext(){
                 <td>
                     <select name="offstation">
                         {% for item in stationlst %}
-                        <option value="{{ item.0 }}">{{ item.1 }} >> {{ item.2 }}</option>
+                        <option value="{{ item.0 }}:{{ item.3 }}">{{ item.1 }} >> {{ item.2 }}</option>
                         {% endfor %}
                     </select>
                 </td>
@@ -108,8 +113,10 @@ function gonext(){
         <input type="hidden" name="bnum" value="{{ bookmark.1 }}">
         <input type="hidden" name="onbsid" value="{{bookmark.2}}">
         <input type="hidden" name="onbsname" value="{{bookmark.3}}">
-        <input type="hidden" name="offbsid" value="{{bookmark.4}}">
-        <input type="hidden" name="offbsname" value="{{bookmark.5}}">
+        <input type="hidden" name="onord" value="{{bookmark.4}}">
+        <input type="hidden" name="offbsid" value="{{bookmark.5}}">
+        <input type="hidden" name="offbsname" value="{{bookmark.6}}">
+        <input type="hidden" name="offord" value="{{bookmark.7}}">
         <input type="hidden" name="payamt" value="">
         <input type="hidden" name="paytype" value="">
         <input type="hidden" name="alarm" value="N">
