@@ -24,25 +24,66 @@ class GetLoginID(APIView):
 class GetMid(APIView):
     def get (self, request, format=None):
 
+
         return Response(request.session['mid'])
 
 class GetStatus(APIView):
     def get (self, request, format=None):
+        mid = request.GET['mid']
 
-        return Response(request.session['mstatus'])
+        query = "select status from megabus_member where mid=%d;" % int(mid)
+        cursor = connection.cursor()
+        row = cursor.execute(query)
+        status = row.fetchone()
+
+        print("status : "+status[0])
+        # 탑승대기 상태라면 승차 알림를 위한 데이터 전달
+        if status[0] == 'R':
+            query = "select ulid, bnid, onbsid, brid, onord  from megabus_uselist " \
+                    "where mid=%d and status='R';" % int(mid)
+            print(query)
+            cursor = connection.cursor()
+            row = cursor.execute(query)
+            rst = row.fetchone()
+            print("rst : " + str(rst))
+            info = [status[0], rst]
+
+            # info = str(status[0])+","+str(rst[0])+","+str(rst[1])+","+str(rst[2])+","+str(rst[3])
+            print(info)
+            return Response(info)
+        # 탑승 중이라면 하차 알림을 위한 데이터 전달
+        elif status[0] == 'ON':
+            query = "select ulid, bnid, offbsid, brid, offord  from megabus_uselist " \
+                    "where mid=%d and status='ON';" % int(mid)
+            print(query)
+            cursor = connection.cursor()
+            row = cursor.execute(query)
+            rst = row.fetchone()
+            print("rst : " + str(rst))
+            info = [status[0], rst]
+
+            # info = str(status[0])+","+str(rst[0])+","+str(rst[1])+","+str(rst[2])+","+str(rst[3])
+            print(info)
+            return Response(info)
+        else:
+            return Response([status[0], []])
 
 class GetBusid(APIView):
     def get (self, request, format=None):
         return Response(request.session['vehid'])
 
-class IsArrive(APIView):
+# 승차 버스 알림
+class ReadyOn(APIView):
     def get(self, request, format=None):
+        bnid = request.GET['bnid']
+        onbsid = request.GET['onbsid']
+        brid = request.GET['brid']
+        onord = request.GET['onord']
 
         # 특정노선(예:1000번 버스노선)의 하차 정류장 도착 순서에 따른 차량id 추출 openAPI 연동 REST [XML]
         url = 'http://ws.bus.go.kr/api/rest/arrive/getArrInfoByRoute'
         keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
-        param1 = '&stId=%s&busRouteId=%s&ord=%s' % (
-            request.session['offbsid'], request.session['brid'], request.session['offord'])
+        param1 = '&stId=%s&busRouteId=%s&ord=%s' % (onbsid, brid, onord)
 
         print(url + keystr + param1)
         response = requests.get(url + keystr + param1)
@@ -55,8 +96,8 @@ class IsArrive(APIView):
         print(vehid2)
         
         rst = "N"
-        # 하차정류장 접근 버스가 현재 탑승버스와 동인한 경우
-        if request.session['vehid']==vehid2:
+        # 승차정류장 접근 버스가 현재 등록한 버스와 동일한 경우
+        if bnid == vehid1:
             rst = "Y"
 
         return Response(rst)
@@ -66,7 +107,7 @@ def notice(request):
 
     return render(request, 'notipage.html', {'msg':'하하하하하'})
 
-
+# 모바일앱 사용자 세션 등록
 def mindex(request):
     mid = request.GET["mid"]
     print("mindex mid : " + str(mid))
@@ -161,7 +202,7 @@ def busform(request):
     print("readyform mid:" + str(mid))
 
     # bookmark 목록 가져오기
-    query = "select ulid, brid, onbsname, offbsname from megabus_uselist " \
+    query = "select ulid, bnname, onbsname, offbsname from megabus_uselist " \
             "where mid=%d and bookmark='Y' order by usedate desc;" % int(mid)
     print(query)
     cursor = connection.cursor()
@@ -256,7 +297,7 @@ def prepayform(request):
 
     mid = request.session['mid']
     print("prepayform mid:" + str(mid))
-    if mid>0:
+    if int(mid)>0:
         # 사용자 보유 마일리지 조회
         query = "select sum(creamt) from megabus_mileage where mid='%s';" % mid
         print(query)
@@ -269,7 +310,6 @@ def prepayform(request):
 
         return render(request, 'pay/prepay.html', dic)
     else:
-
         return render(request, 'member/login.html')
 
 # 선결제 logic
@@ -330,7 +370,7 @@ def readyform (request):
 
     # 버스노선 이용내역
     query = "select ulid, bnname, onbsname, offbsname, usedate from megabus_uselist " \
-            "where mid=%d and status='R' order by usedate desc;" % int(mid)
+            "where mid=%d and status='N' order by usedate desc;" % int(mid)
     print(query)
     cursor = connection.cursor()
     row = cursor.execute(query)
@@ -349,7 +389,7 @@ def ready(request):
 
     # 버스노선 이용내역
     query = "select brid, bnname, onbsid, onord, offbsid, offord from megabus_uselist " \
-            "where ulid=%d and status='R' order by usedate desc;" % int(useid)
+            "where ulid=%d order by usedate desc;" % int(useid)
     print(query)
     cursor = connection.cursor()
     row = cursor.execute(query)
@@ -381,8 +421,27 @@ def ready(request):
     vehid2 = soup.find('vehid2').text
     print(vehid2)
 
+    #테스트용
+    print(vehid2+":"+str(request.session['onbsid'])+":"+str(request.session['brid'])+":"+str(request.session['onord']))
+
     # 승차버스 아이디 준비
-    request.session['vehid'] = vehid1
+    if (int(vehid2)>0):
+        request.session['vehid'] = vehid2
+
+    # 이용건의 이용상태 승차대기 및 탑승 예정버스 아이디  변경
+    query = "update megabus_uselist set status='R', bnid=%d where ulid=%d ;" % (int(vehid2), int(useid))
+    print(query)
+    cursor = connection.cursor()
+    cursor.execute(query)
+    connection.commit()
+
+
+    # 사용자의 이용상태 승차대기 으로 변경
+    query = "update megabus_member set status='R' where mid=%d ;" % (int(mid))
+    print(query)
+    cursor = connection.cursor()
+    cursor.execute(query)
+    connection.commit()
 
     return render(request, 'main.html')
 
@@ -502,20 +561,34 @@ def makeqr(request):
 
 # 하차 태깅 처리 > 버스 앱 하차용qr에 고정 url로 세팅됨.
 def bus_getoff(request):
-    # 승차등록에서 설정된 이용id
-    useid = request.session['useid']
-    print("bus_getoff useid:" + useid)
+    # 사용자가 스캔한 url로 넘어옴.
+    mid = request.GET['mid']
+    print("bus_take mid:" + mid)
 
-    # 이용상태 탑승으로 변경
-    query = "update megabus_uselist set status='OFF' where ulid=%d ;" % (int(useid))
+    query = "select ulid from megabus_uselist " \
+            "where status='ON' and mid=%d;" % int(mid)
+    print(query)
+    cursor = connection.cursor()
+    row = cursor.execute(query)
+    rst = row.fetchone()
+
+    # 이용내역 이용상태 탑승으로 변경
+    query = "update megabus_uselist set status='OFF' where ulid=%d ;" % (rst[0])
     print(query)
     cursor = connection.cursor()
     cursor.execute(query)
     connection.commit()
 
-    request.session['mstatus'] = "OFF"
+    # 사용자의 이용상태 승차대기 으로 변경
+    query = "update megabus_member set status='OFF' where mid=%d ;" % (int(mid))
+    print(query)
+    cursor = connection.cursor()
+    cursor.execute(query)
+    connection.commit()
 
-    return render(request, 'member/login.html')
+    #request.session['mstatus'] = "OFF"
+
+    return render(request, 'main.html')
 
 
 #버스 단말기 용
@@ -530,10 +603,25 @@ def bus_geton(request):
     print("bus_take useid:" + useid)
 
     # 현재 차량아이디를 등록함.
-    bnid = request.session['vehid']
+    #bnid = request.session['vehid']
+    # session 무시됨. 사용자 리스트에 등록된 예정버스를 사용함.
+    query = "select bnid from megabus_uselist " \
+            "where status='R' and mid=%d;" % int(mid)
+    print(query)
+    cursor = connection.cursor()
+    row = cursor.execute(query)
+    rst = row.fetchone()
+    bnid = rst[0]
 
     # 이용상태 탑승으로 변경
     query = "update megabus_uselist set status='ON', bnid=%d where ulid=%d ;" % (int(bnid), int(useid))
+    print(query)
+    cursor = connection.cursor()
+    cursor.execute(query)
+    connection.commit()
+
+    # 사용자의 이용상태 승차대기 으로 변경
+    query = "update megabus_member set status='ON' where mid=%d ;" % (int(mid))
     print(query)
     cursor = connection.cursor()
     cursor.execute(query)
@@ -548,9 +636,9 @@ def bus_makeqr(request):
     bnid = request.session['vehid']
 
     # local용
-    homeurl = "http://127.0.0.1:8000/megabus/bussys/bus_getoff"
+    homeurl = "http://127.0.0.1:8000/megabus/getoff/bus_getoff"
     # real용
-    # homeurl = "http://makecoding.pythonanywhere.com/megabus/bussys/bus_getoff"
+    # homeurl = "http://makecoding.pythonanywhere.com/megabus/getoff/bus_getoff"
     qr = "https://chart.googleapis.com/chart?cht=qr&chl=%s&chs=200x200" % (homeurl)
 
     return render(request, 'qr/QRcode.html', {'qr': qr})

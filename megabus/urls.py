@@ -7,7 +7,7 @@ urlpatterns = [
     path('api/getMid', views.GetMid.as_view(), name='getMid'),
     path('api/getStatus', views.GetStatus.as_view(), name='getStatus'),
     path('api/getBusid', views.GetBusid.as_view(), name='getBusid'),
-    path('api/isArrive', views.IsArrive.as_view(), name='isArrive'),
+    path('api/readyOn', views.ReadyOn.as_view(), name='readyOn'),
 
     #(실제 root이하의 web url (html 파일 위치가 아님), views.py의 메서드, ??)
     # http:/127.0.0.1:8000/megabus/
@@ -39,6 +39,9 @@ urlpatterns = [
     path('mypage/paylist', views.paylist, name='paylist'),
     path('mypage/mileagelist', views.mileagelist, name='mileagelist'),
     path('mypage/bookmark', views.bookmark, name='bookmark'),
+
+    # 하차 태깅용
+    path('getoff/bus_getoff', views.bus_getoff, name='bus_getoff'),
 
 
     # 버스 단말기용 urls
