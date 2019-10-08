@@ -102,6 +102,68 @@ class ReadyOn(APIView):
 
         return Response(rst)
 
+class SearchStation(APIView):
+    def get (self, request, format=None):
+        tmx = request.GET['tmx']
+        tmy = request.GET['tmy']
+
+        # 근접 정류장 조회 openAPI 연동 REST [XML]
+        url = 'http://ws.bus.go.kr/api/rest/stationinfo/getStationByPos'
+        keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
+        param1 = '&tmX=%s&tmY=%s&radius=200' % (tmx, tmy)
+        print("SearchStation : "+ url+keystr+param1)
+        response = requests.get(url+keystr+param1)
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # soup의 모든 node는 소문자
+        gpsxlist = soup.findAll('gpsx')
+        gpsyList = soup.findAll('gpsy')
+        nameList = soup.findAll('stationnm')
+        print(len(nameList))
+        rst = []
+        for i, val in enumerate(nameList):
+            rst.append([gpsxlist[i].text, gpsyList[i].text, nameList[i].text])
+
+        return Response(rst)
+
+# 승차
+class GetOn(APIView):
+    def get(self, request, format=None):
+        # 사용자 qr코드로 넘어온 사용자 id
+        info = request.GET['info']
+        infolst = info.split("-")
+        mid=infolst[0]
+        print("bus_geton mid:" + mid)
+        ulid = infolst[1]
+        print("bus_geton ulid:" + ulid)
+
+        # 이용상태 탑승으로 변경
+        query = "update megabus_uselist set status='ON' where ulid=%d ;" % (int(ulid))
+        print(query)
+        cursor = connection.cursor()
+        cursor.execute(query)
+        connection.commit()
+
+        # 사용자의 이용상태 승차대기 으로 변경
+        query = "update megabus_member set status='ON' where mid=%d ;" % (int(mid))
+        print(query)
+        cursor = connection.cursor()
+        cursor.execute(query)
+        connection.commit()
+
+        # 선결제 여부 확인
+        query = "select pid from megabus_uselist where ulid=%d;" % (int(ulid))
+        cursor = connection.cursor()
+        row = cursor.execute(query)
+        pid = row.fetchone()[0]
+        print(pid)
+        rst = 'N'
+        if pid != "":
+            rst = 'Y'
+        print(rst)
+
+        return Response(rst)
+
 # 공통 알림페이지
 def notice(request):
 
@@ -422,19 +484,18 @@ def ready(request):
     print(vehid2)
 
     #테스트용
-    print(vehid2+":"+str(request.session['onbsid'])+":"+str(request.session['brid'])+":"+str(request.session['onord']))
+    print(vehid1+":"+str(request.session['onbsid'])+":"+str(request.session['brid'])+":"+str(request.session['onord']))
 
     # 승차버스 아이디 준비
-    if (int(vehid2)>0):
-        request.session['vehid'] = vehid2
+    #if (int(vehid1)>0):
+    request.session['vehid'] = vehid1
 
     # 이용건의 이용상태 승차대기 및 탑승 예정버스 아이디  변경
-    query = "update megabus_uselist set status='R', bnid=%d where ulid=%d ;" % (int(vehid2), int(useid))
+    query = "update megabus_uselist set status='R', bnid=%d where ulid=%d ;" % (int(vehid1), int(useid))
     print(query)
     cursor = connection.cursor()
     cursor.execute(query)
     connection.commit()
-
 
     # 사용자의 이용상태 승차대기 으로 변경
     query = "update megabus_member set status='R' where mid=%d ;" % (int(mid))
@@ -549,13 +610,16 @@ def bookmark(request):
 def makeqr(request):
     mid = request.session['mid']
     print("makeqr mid:" + str(mid))
+    ulid = request.session['useid']
+    print("makeqr ulid:" + str(ulid))
+    info = mid+"-"+ulid
 
     # local용
-    homeurl = "http://127.0.0.1:8000/megabus/bussys/bus_geton"
+    homeurl = "http://127.0.0.1:8000/megabus/api/bus_getOn"
     # real용
-    #homeurl = "http://makecoding.pythonanywhere.com/megabus/bussys/bus_geton"
-    qr = "https://chart.googleapis.com/chart?cht=qr&chl=%s?mid=%s&chs=200x200" % (homeurl, mid)
-
+    #homeurl = "http://makecoding.pythonanywhere.com/megabus/api/bus_getOn"
+    qr = "https://chart.googleapis.com/chart?cht=qr&chl=%s?info=%s&chs=200x200" % (homeurl, info)
+    print("makeqr qr:" + qr)
 
     return render(request, 'qr/QRcode.html', {'qr': qr})
 
@@ -592,49 +656,10 @@ def bus_getoff(request):
 
 
 #버스 단말기 용
-# 승차 태깅 처리 (차량 배정 /
-def bus_geton(request):
-    # 버스단말기 qr태킹에서 넘어온 사용자 id
-    mid = request.GET['mid']
-    print("bus_take mid:" + mid)
-
-    # 승차등록에서 설정된 이용id
-    useid = request.session['useid']
-    print("bus_take useid:" + useid)
-
-    # 현재 차량아이디를 등록함.
-    #bnid = request.session['vehid']
-    # session 무시됨. 사용자 리스트에 등록된 예정버스를 사용함.
-    query = "select bnid from megabus_uselist " \
-            "where status='R' and mid=%d;" % int(mid)
-    print(query)
-    cursor = connection.cursor()
-    row = cursor.execute(query)
-    rst = row.fetchone()
-    bnid = rst[0]
-
-    # 이용상태 탑승으로 변경
-    query = "update megabus_uselist set status='ON', bnid=%d where ulid=%d ;" % (int(bnid), int(useid))
-    print(query)
-    cursor = connection.cursor()
-    cursor.execute(query)
-    connection.commit()
-
-    # 사용자의 이용상태 승차대기 으로 변경
-    query = "update megabus_member set status='ON' where mid=%d ;" % (int(mid))
-    print(query)
-    cursor = connection.cursor()
-    cursor.execute(query)
-    connection.commit()
-
-    request.session['mstatus'] = "ON"
-
-    return render(request, 'main.html')
+# 승차 태깅 처리 > api로 변경
 
 # 차량용 QR 코드 생성
 def bus_makeqr(request):
-    bnid = request.session['vehid']
-
     # local용
     homeurl = "http://127.0.0.1:8000/megabus/getoff/bus_getoff"
     # real용
