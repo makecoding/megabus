@@ -5,12 +5,11 @@ urlpatterns = [
     # REST 제공용
     path('api/login', views.GetLoginID.as_view(), name='apilogin'),
     path('api/getMid', views.GetMid.as_view(), name='getMid'),
-    path('api/getStatus', views.GetStatus.as_view(), name='getStatus'),
-    path('api/getBusid', views.GetBusid.as_view(), name='getBusid'),
-    path('api/readyOn', views.ReadyOn.as_view(), name='readyOn'),
+    path('api/noitOnOff', views.NotiOnOff.as_view(), name='noitOnOff'),
 
     path('api/bus_getOn', views.GetOn.as_view(), name='getOn'),
     path('api/searchStation', views.SearchStation.as_view(), name='getStation'),
+    path('api/getcInfo', views.GetCurrentInfo.as_view(), name='getCInfo'),
 
     #(실제 root이하의 web url (html 파일 위치가 아님), views.py의 메서드, ??)
     # http:/127.0.0.1:8000/megabus/

@@ -17,14 +17,16 @@ class GetLoginID(APIView):
         query = "select mid from megabus_member where id='%s' and upw='%s';" % (uid, upw)
         cursor = connection.cursor()
         row = cursor.execute(query)
-        mid = row.fetchone()
+        rst = row.fetchone()
+        print(rst)
+        mid = 0
+        if rst!=None:
+            mid = rst[0]
 
         return Response(mid)
 
 class GetMid(APIView):
     def get (self, request, format=None):
-
-
         return Response(request.session['mid'])
 
 class GetStatus(APIView):
@@ -34,74 +36,88 @@ class GetStatus(APIView):
         query = "select status from megabus_member where mid=%d;" % int(mid)
         cursor = connection.cursor()
         row = cursor.execute(query)
-        status = row.fetchone()
+        status = row.fetchone()[0]
 
-        print("status : "+status[0])
-        # 탑승대기 상태라면 승차 알림를 위한 데이터 전달
-        if status[0] == 'R':
-            query = "select ulid, bnid, onbsid, brid, onord  from megabus_uselist " \
-                    "where mid=%d and status='R';" % int(mid)
-            print(query)
-            cursor = connection.cursor()
-            row = cursor.execute(query)
-            rst = row.fetchone()
-            print("rst : " + str(rst))
-            info = [status[0], rst]
+        return Response(status)
 
-            # info = str(status[0])+","+str(rst[0])+","+str(rst[1])+","+str(rst[2])+","+str(rst[3])
-            print(info)
-            return Response(info)
-        # 탑승 중이라면 하차 알림을 위한 데이터 전달
-        elif status[0] == 'ON':
-            query = "select ulid, bnid, offbsid, brid, offord  from megabus_uselist " \
-                    "where mid=%d and status='ON';" % int(mid)
-            print(query)
-            cursor = connection.cursor()
-            row = cursor.execute(query)
-            rst = row.fetchone()
-            print("rst : " + str(rst))
-            info = [status[0], rst]
-
-            # info = str(status[0])+","+str(rst[0])+","+str(rst[1])+","+str(rst[2])+","+str(rst[3])
-            print(info)
-            return Response(info)
-        else:
-            return Response([status[0], []])
-
-class GetBusid(APIView):
+class GetCurrentInfo (APIView):
     def get (self, request, format=None):
-        return Response(request.session['vehid'])
+        mid = request.GET['mid']
 
-# 승차 버스 알림
-class ReadyOn(APIView):
+        query = "select * from megabus_currentinfo where mid =%d" % int(mid)
+        print("GetCurrentInfo query : " + query)
+        cursor = connection.cursor()
+        row = cursor.execute(query)
+        info = row.fetchone()
+        print("GetCurrentInfo info:" + info)
+
+        return Response(info)
+
+# 승하차 버스 알림
+class NotiOnOff(APIView):
     def get(self, request, format=None):
-        bnid = request.GET['bnid']
-        onbsid = request.GET['onbsid']
-        brid = request.GET['brid']
-        onord = request.GET['onord']
+        mid = request.GET['mid']
+        status = request.GET['status']
 
-        # 특정노선(예:1000번 버스노선)의 하차 정류장 도착 순서에 따른 차량id 추출 openAPI 연동 REST [XML]
-        url = 'http://ws.bus.go.kr/api/rest/arrive/getArrInfoByRoute'
-        keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
-        param1 = '&stId=%s&busRouteId=%s&ord=%s' % (onbsid, brid, onord)
+        # 사용자의 현재 이용리스트 정보 추출
+        query = "select a.status, b.ulid, b.bnid, b.brid, b.onbsid, b.onord, b.offbsid, b.offord " \
+                "from megabus_member a, megabus_uselist b, megabus_currentinfo c " \
+                "where a.mid = b.mid and b.mid=c.mid and a.mid =%d "\
+                "and c.ulid=b.ulid;" % int(mid)
+        print("NotiOnOff query : " + query)
+        cursor = connection.cursor()
+        row = cursor.execute(query)
+        info = row.fetchone()
+        print(info)
 
-        print(url + keystr + param1)
-        response = requests.get(url + keystr + param1)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        bnid = info[2]
+        brid = info[3]
+        ord = 0
+        bsid = 0
 
-        # soup의 모든 node는 소문자
-        vehid1 = soup.find('vehid1').text
-        print(vehid1)
-        vehid2 = soup.find('vehid2').text
-        print(vehid2)
-        
+        #status = info[0]
+        print("NotiOnOff status:" + status)
+        # 대기 상태라면 승차 알림을 위한 데이터 전달
+        if status == 'R':
+            bsid = info[4]
+            ord = info[5]
+        # 탑승 중이라면 하차 알림을 위한 데이터 전달
+        elif status == 'ON':
+            bsid = info[6]
+            ord = info[7]
+
+        if bsid==0:
+            return Response("E")
+
+        if bnid!=None or bnid!=0:
+            # 특정노선(예:1000번 버스노선)의 하차 정류장 도착 순서에 따른 차량id 추출 openAPI 연동 REST [XML]
+            url = 'http://ws.bus.go.kr/api/rest/arrive/getArrInfoByRoute'
+            keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
+            param1 = '&stId=%s&busRouteId=%s&ord=%s' % (bsid, brid, ord)
+
+            print(url + keystr + param1)
+            response = requests.get(url + keystr + param1)
+            soup = BeautifulSoup(response.text, 'html.parser')
+
+            # soup의 모든 node는 소문자
+            vehid1 = soup.find('vehid1').text
+            print(vehid1)
+            vehid2 = soup.find('vehid2').text
+            print(vehid2)
+
+        print("NotiOnOff YN : " + str(bnid) +" :: "+ vehid1)
+
         rst = "N"
         # 승차정류장 접근 버스가 현재 등록한 버스와 동일한 경우
-        if bnid == vehid1:
-            rst = "Y"
+        if bnid!=0:
+            if str(bnid) == vehid1:
+                rst = "Y"
+        else:
+            rst = "E"
 
         return Response(rst)
 
+# 위경도 기준 근접 정류장 찾기
 class SearchStation(APIView):
     def get (self, request, format=None):
         tmx = request.GET['tmx']
@@ -110,7 +126,7 @@ class SearchStation(APIView):
         # 근접 정류장 조회 openAPI 연동 REST [XML]
         url = 'http://ws.bus.go.kr/api/rest/stationinfo/getStationByPos'
         keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
-        param1 = '&tmX=%s&tmY=%s&radius=200' % (tmx, tmy)
+        param1 = '&tmX=%s&tmY=%s&radius=500' % (tmx, tmy)
         print("SearchStation : "+ url+keystr+param1)
         response = requests.get(url+keystr+param1)
         soup = BeautifulSoup(response.text, 'html.parser')
@@ -164,10 +180,27 @@ class GetOn(APIView):
 
         return Response(rst)
 
+class GetCurrentInfo (APIView):
+    def get (self, request, format=None):
+        mid = request.GET['mid']
+
+        query = "select * from megabus_currentinfo where mid =%d" % int(mid)
+        print("GetCurrentInfo query : " + query)
+        cursor = connection.cursor()
+        row = cursor.execute(query)
+        info = row.fetchone()
+        print("GetCurrentInfo info:" + info)
+
+        return Response(info)
+
+
+
+
 # 공통 알림페이지
 def notice(request):
+    msg = request.GET["msg"]
 
-    return render(request, 'notipage.html', {'msg':'하하하하하'})
+    return render(request, 'main.html', {'msg':msg})
 
 # 모바일앱 사용자 세션 등록
 def mindex(request):
@@ -176,12 +209,7 @@ def mindex(request):
 
     request.session['mid'] = mid
 
-    # 사용자 상태에 따라 메인 메뉴 구성 달라짐
-    # stat = ''
-    # if request.session.has_key('mstatus'):
-    #     stat = request.session['mstatus']
-
-    return render(request, 'main.html', {'mid': mid})
+    return render(request, 'main.html', {'msg': "환영합니다."})
 
 def index(request):
     mid = 0
@@ -189,12 +217,8 @@ def index(request):
         mid = request.session['mid']
     print("index mid : "+str(mid))
     
-    # 사용자 상태에 따라 메인 메뉴 구성 달라짐
-    stat = ''
-    if request.session.has_key('mstatus'):
-        stat = request.session['mstatus']
-
-    return render(request, 'main.html', {'mid': mid, 'stat': stat})
+    #return render(request, 'main.html', {'mid': mid, 'stat': stat})
+    return render(request, 'main.html', {'msg': "환영합니다."})
 
 def joinform(request):
     return render(request, 'member/join.html')
@@ -392,6 +416,36 @@ def prepay(request):
     alarm = request.POST['alarm']
 
     mid = request.session['mid']
+
+    # 아이디 추출
+    query = "select seq+1 from sqlite_sequence where name = 'megabus_uselist'";
+    print(query)
+    cursor = connection.cursor()
+    row = cursor.execute(query)
+    ulid = row.fetchone()[0]
+    print(ulid)
+    request.session['ulid'] = ulid
+
+    # 현재 작업중인 ulid 등록
+    query = "select count(*) from megabus_currentinfo where mid =%d" % int(mid)
+    print("prepay query : "+ query)
+    cursor = connection.cursor()
+    row = cursor.execute(query)
+    cnt = row.fetchone()[0]
+    print("prepay cnt:" + str(cnt))
+
+    if cnt==0:
+        query = "insert into megabus_currentinfo (mid, ulid) values (%d, %d);" % (int(mid), ulid)
+        print(query)
+        cursor = connection.cursor()
+        cursor.execute(query)
+    else:
+        query = "update megabus_currentinfo set ulid=%d where mid=%d ;" % (ulid, int(mid))
+        print(query)
+        cursor = connection.cursor()
+        cursor.execute(query)
+        connection.commit()
+
     # 승하차 등록 내역 저장
     query = "insert into megabus_uselist (mid, brid, bnname, onbsid, onbsname, onord, offbsid, offbsname, offord, pid, payamt, alarm)" \
             "  values (%d, %d, '%s', %d, '%s', %d, %d, '%s', %d, '%s', '%s', '%s')"\
@@ -408,8 +462,10 @@ def prepay(request):
         cursor = connection.cursor()
         cursor.execute(query)
 
+    msg = "승차정보 등록 완료"
     # 선결제 진행
     if paytype != '':
+
         query = "insert into megabus_mileage (mid, cretype, creamt, crewhere)" \
                 "  values(%d, '적립', %d, '선결제')" % (int(mid), 0.03 * int(payamt))
         print(query)
@@ -423,9 +479,11 @@ def prepay(request):
             cursor = connection.cursor()
             cursor.execute(query)
 
-    return render(request, 'main.html')
+        msg = "승차정보 등록 및 결제 완료"
 
-# 승차 대기 등록
+    return render(request, 'main.html', {'msg':msg})
+
+# 승차 대기 선택 페이지
 def readyform (request):
     mid = request.session['mid']
     print("readyform mid:" + str(mid))
@@ -442,12 +500,12 @@ def readyform (request):
 
     return render(request, 'takeonoff/readyform.html', dic)
 
-# 승차대기
+# 승차대기 등록
 def ready(request):
     mid = request.session['mid']
     print("ready mid:" + str(mid))
-
     useid = request.POST['ulid']
+    print("ready useid:" + str(useid))
 
     # 버스노선 이용내역
     query = "select brid, bnname, onbsid, onord, offbsid, offord from megabus_uselist " \
@@ -456,7 +514,7 @@ def ready(request):
     cursor = connection.cursor()
     row = cursor.execute(query)
     rst = row.fetchone()
-
+    print(rst)
     request.session['useid'] = useid
     request.session['brid'] = rst[0]
     request.session['bnname'] = rst[1]
@@ -483,15 +541,34 @@ def ready(request):
     vehid2 = soup.find('vehid2').text
     print(vehid2)
 
+    vehid = vehid2
+    if vehid=='0':
+        vehid = vehid1
     #테스트용
-    print(vehid1+":"+str(request.session['onbsid'])+":"+str(request.session['brid'])+":"+str(request.session['onord']))
+    print(vehid+":"+str(request.session['onbsid'])+":"+str(request.session['brid'])+":"+str(request.session['onord']))
 
-    # 승차버스 아이디 준비
-    #if (int(vehid1)>0):
-    request.session['vehid'] = vehid1
+    # 현재 작업중인 정보 등록
+    query = "select count(*) from megabus_currentinfo where mid =%d" % int(mid)
+    print("prepay query : "+ query)
+    cursor = connection.cursor()
+    row = cursor.execute(query)
+    cnt = row.fetchone()[0]
+    print("prepay cnt:" + str(cnt))
+
+    if cnt==0:
+        query = "insert into megabus_currentinfo (mid, ulid, vehid) values (%d, %d, %d);" % (int(mid), int(useid), int(vehid))
+        print(query)
+        cursor = connection.cursor()
+        cursor.execute(query)
+    else:
+        query = "update megabus_currentinfo set ulid=%d, vehid=%d where mid=%d ;" % (int(useid), int(vehid), int(mid))
+        print(query)
+        cursor = connection.cursor()
+        cursor.execute(query)
+        connection.commit()
 
     # 이용건의 이용상태 승차대기 및 탑승 예정버스 아이디  변경
-    query = "update megabus_uselist set status='R', bnid=%d where ulid=%d ;" % (int(vehid1), int(useid))
+    query = "update megabus_uselist set status='R', bnid=%d where ulid=%d ;" % (int(vehid), int(useid))
     print(query)
     cursor = connection.cursor()
     cursor.execute(query)
@@ -504,7 +581,7 @@ def ready(request):
     cursor.execute(query)
     connection.commit()
 
-    return render(request, 'main.html')
+    return render(request, 'main.html', {'msg':'승차대기 요청 완료'})
 
 def mypage(request):
     mid = request.session['mid']
@@ -604,7 +681,7 @@ def bookmark(request):
     cursor.execute(query)
     connection.commit()
 
-    return render(request, 'main.html')
+    return render(request, 'main.html', {'msg':'Bookmark 등록 완료'})
 
 # 승차 QR 코드 생성
 def makeqr(request):
@@ -615,9 +692,9 @@ def makeqr(request):
     info = mid+"-"+ulid
 
     # local용
-    homeurl = "http://127.0.0.1:8000/megabus/api/bus_getOn"
+    #homeurl = "http://127.0.0.1:8000/megabus/api/bus_getOn"
     # real용
-    #homeurl = "http://makecoding.pythonanywhere.com/megabus/api/bus_getOn"
+    homeurl = "http://makecoding.pythonanywhere.com/megabus/api/bus_getOn"
     qr = "https://chart.googleapis.com/chart?cht=qr&chl=%s?info=%s&chs=200x200" % (homeurl, info)
     print("makeqr qr:" + qr)
 
@@ -652,7 +729,7 @@ def bus_getoff(request):
 
     #request.session['mstatus'] = "OFF"
 
-    return render(request, 'main.html')
+    return render(request, 'main.html', {'msg':'이용해 주셔서 감사합니다.'})
 
 
 #버스 단말기 용
@@ -661,9 +738,9 @@ def bus_getoff(request):
 # 차량용 QR 코드 생성
 def bus_makeqr(request):
     # local용
-    homeurl = "http://127.0.0.1:8000/megabus/getoff/bus_getoff"
+    #homeurl = "http://127.0.0.1:8000/megabus/getoff/bus_getoff"
     # real용
-    # homeurl = "http://makecoding.pythonanywhere.com/megabus/getoff/bus_getoff"
-    qr = "https://chart.googleapis.com/chart?cht=qr&chl=%s&chs=200x200" % (homeurl)
+    homeurl = "http://makecoding.pythonanywhere.com/megabus/getoff/bus_getoff"
+    qr = "https://chart.googleapis.com/chart?cht=qr&chl=%s&chs=250x250" % (homeurl)
 
     return render(request, 'qr/QRcode.html', {'qr': qr})

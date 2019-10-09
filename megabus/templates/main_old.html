@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MeGaBus</title>
+</head>
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
+<body>
+    <p class="aa"> <strong>메인 화면</strong> </p>
+    </br>
+    {% ifequal mid 0 %}
+    <a href="/megabus/member/joinform">회원가입</a>
+    </br>
+    <a href="/megabus/member/loginform">로그인</a>
+    </br>
+    {% else %}
+    <a href="/megabus/member/logout">로그아웃</a>
+    </br>
+    {% endifequal %}
+    <a href="/megabus/takeonoff/busform">노선/정류장선택</a>
+    </br>
+    <a href="/megabus/takeonoff/readyform">승차대기</a>
+    </br>
+    <a href="/megabus/qr/makeqr">승차</a>
+    </br>
+    <a href="/megabus/mypage/mypage">마이페이지</a>
+    </br>
+    <a href="/megabus/bussys/bus_makeqr">버스용 하차QR 생성</a>
+    </br>
+    <a href="/megabus/bussys/bus_makeqr">하차 알림 테스트</a>
+    </br>
+    <a href="/megabus/apitest">웹요청 처리 후 API리턴</a>
+    </br>
+
+</body>
+</html>
