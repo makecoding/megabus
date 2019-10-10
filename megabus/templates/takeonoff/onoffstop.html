@@ -8,6 +8,13 @@
 <link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
 
 <script>
+function notialarm(obj) {
+
+    if (obj.checked) {
+        alert("알림 서비스 이용시\n마일리지가 차감됩니다.");
+    }
+}
+
 function gonext(){
     var frm = document.frm;
 
@@ -143,7 +150,7 @@ function gonext(){
         <table>
             <tr>
                 <td>
-                    <input type="checkbox" name="alarmchb"> <label>승하차 알림서비스를 등록하시겠습니까?</label>
+                    <input type="checkbox" name="alarmchb" onclick="notialarm(this);"> <label>승하차 알림서비스를 등록하시겠습니까?</label>
                 </td>
             </tr>
             <tr>

@@ -61,10 +61,10 @@
     <form name="frm" action="/megabus/member/join" method="POST" onsubmit="return gojoin()">{% csrf_token %}
         <table class="join">
             <tr height="40px">
-                <td width="40%" align="center">
+                <td align="center">
                     <label>이름</label>
                 </td>
-                <td align="center" colspan="2">
+                <td align="left" colspan="2">
                     <input type=" text" name="uname" value="">
                 </td>
             </tr>
@@ -72,7 +72,7 @@
                 <td align="center">
                    <label>전화번호</label>
                 </td>
-                <td align="center" colspan="2">
+                <td align="left" colspan="2">
                     <input type="text" name="uphone" value="">
                 </td>
             </tr>
@@ -80,7 +80,7 @@
                 <td align="center">
                     <label>아이디</label>
                 </td>
-                <td align="center" colspan="2">
+                <td align="left" colspan="2">
                     <input type=" text" name="uid" value="">
                 </td>
             </tr>
@@ -88,7 +88,7 @@
                 <td align="center">
                     <label>비밀번호</label>
                 </td>
-                <td align="center" colspan="2">
+                <td align="left" colspan="2">
                     <input type="password" name="upw1" value="">
                 </td>
             </tr>
@@ -96,19 +96,19 @@
                 <td align="center">
                     <label>비밀번호 확인</label>
                 </td>
-                <td align="center" colspan="2">
+                <td align="left" colspan="2">
                     <input type="password" name="upw2" value="">
                 </td>
             </tr>
             <tr height="40px">
-                <td width="40%" align="center">
+                <td width="60px" align="center">
                     <label>장애인 등록</label>
                 </td>
-                <td width="30%" align="center">
+                <td width="60px" align="center">
                     <input type="radio" name="disabled" value="Y" onclick="fnChoice(this)">예
 
                 </td>
-                <td width="30%" align="center">
+                <td width="60px" align="center">
                     <input type="radio" name="disabled" value="N" checked onclick="fnChoice(this)">아니요
                 </td>
             </tr>

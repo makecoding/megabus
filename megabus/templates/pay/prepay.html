@@ -32,16 +32,18 @@
                 }
             }
         }
+    }
 
+    function gonext() {
         alert("결제 처리과정은 생략됩니다.")
-
+        return true;
     }
 
 
 </script>
 <body>
     <p class="aa"> <strong>선결제</strong> </p>
-    <form name="frm" action="/megabus/pay/prepay" method="post">{% csrf_token %}
+    <form name="frm" action="/megabus/pay/prepay" method="post" onsubmit="return gonext()">{% csrf_token %}
         <input type="hidden" name="mid" value="{{ mid }}">
         <input type="hidden" name="brid" value="{{ brid }}">
         <input type="hidden" name="bnum" value="{{ bnum }}">

@@ -7,6 +7,9 @@ from bs4 import BeautifulSoup
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+#APIkey = "WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D"
+APIkey = "831ElSfnlYBAj7rBXEIyWn7tp9yuxS%2B5vGLhDa0uFGl4TU7741TdTkmTdtYkR%2BtMx9dRLZNhDnud8H5bmUxz0g%3D%3D"
+
 # API call은 session 사용 불가
 class GetLoginID(APIView):
     #DB 사용 example
@@ -92,7 +95,7 @@ class NotiOnOff(APIView):
         if bnid!=None or bnid!=0:
             # 특정노선(예:1000번 버스노선)의 하차 정류장 도착 순서에 따른 차량id 추출 openAPI 연동 REST [XML]
             url = 'http://ws.bus.go.kr/api/rest/arrive/getArrInfoByRoute'
-            keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
+            keystr = '?serviceKey='+APIkey
             param1 = '&stId=%s&busRouteId=%s&ord=%s' % (bsid, brid, ord)
 
             print(url + keystr + param1)
@@ -125,7 +128,7 @@ class SearchStation(APIView):
 
         # 근접 정류장 조회 openAPI 연동 REST [XML]
         url = 'http://ws.bus.go.kr/api/rest/stationinfo/getStationByPos'
-        keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
+        keystr = '?serviceKey=' + APIkey
         param1 = '&tmX=%s&tmY=%s&radius=500' % (tmx, tmy)
         print("SearchStation : "+ url+keystr+param1)
         response = requests.get(url+keystr+param1)
@@ -247,7 +250,7 @@ def join(request):
     cursor = connection.cursor()
     cursor.execute(query)
 
-    return render(request, 'member/login.html')
+    return render(request, 'main.html', {'msg': "MegaBus를 즐겨보세요."})
 
 def loginform(request):
     return render(request, 'member/login.html')
@@ -306,7 +309,7 @@ def busform(request):
 
         # 검색어로 버스번호 조회 openAPI 연동 REST [XML]
         url = 'http://ws.bus.go.kr/api/rest/busRouteInfo/getBusRouteList'
-        keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
+        keystr = '?serviceKey=' + APIkey
         param1 = '&strSrch='+busnum
 
         response = requests.get(url+keystr+param1)
@@ -334,7 +337,7 @@ def stopform(request):
 
         # 선택버스의 노선조회 openAPI 연동 REST [XML]
         url = 'http://ws.bus.go.kr/api/rest/busRouteInfo/getStaionByRoute'
-        keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
+        keystr = '?serviceKey=' + APIkey
         param1 = '&busRouteId='+brid
 
         response = requests.get(url+keystr+param1)
@@ -527,7 +530,7 @@ def ready(request):
 
     # 특정노선(예:1000번 버스노선)의 특정 정류장 도착 순서에 따른 차량id 추출 openAPI 연동 REST [XML]
     url = 'http://ws.bus.go.kr/api/rest/arrive/getArrInfoByRoute'
-    keystr = '?serviceKey=WS6IE%2F0nHkArdmPt3284YdVVLGtZPSuSQ0ANuFo463Hj3KU9zb7RpSz5hJHWQpWw0sE0Vbz9V4f7zBSdO7%2FR1A%3D%3D'
+    keystr = '?serviceKey=' + APIkey
     param1 = '&stId=%s&busRouteId=%s&ord=%s' % (
     request.session['onbsid'], request.session['brid'], request.session['onord'])
 
