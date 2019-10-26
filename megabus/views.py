@@ -196,7 +196,36 @@ class GetCurrentInfo (APIView):
 
         return Response(info)
 
+class GetBusInfo (APIView):
+    def get (self, request, format=None):
+        rst = []
+        query = "select count(*) from megabus_uselist where status='R';"
+        print("GetBusInfo query : " + query)
+        cursor = connection.cursor()
+        row = cursor.execute(query)
+        rst.append(row.fetchone()[0])
 
+        query = "select count(*) from megabus_uselist where status='R' and handisvc='Y';"
+        print("GetBusInfo query : " + query)
+        cursor = connection.cursor()
+        row = cursor.execute(query)
+        rst.append(row.fetchone()[0])
+
+        query = "select count(*) from megabus_uselist where status='ON';"
+        print("GetBusInfo query : " + query)
+        cursor = connection.cursor()
+        row = cursor.execute(query)
+        rst.append(row.fetchone()[0])
+
+        query = "select count(*) from megabus_uselist where status='ON' and handisvc='Y';"
+        print("GetBusInfo query : " + query)
+        cursor = connection.cursor()
+        row = cursor.execute(query)
+        rst.append(row.fetchone()[0])
+
+        print(rst)
+
+        return Response(rst)
 
 
 # 공통 알림페이지
@@ -235,7 +264,7 @@ def join(request):
 
     # 회원 가입
     query = "insert into megabus_member(id,name,upw,phonenumber,handicap,mileage)  " \
-            "values('%s','%s','%s','%s','%s',1000)" % (uid, uname, upw1, uphone, disabled)
+            "values('%s','%s','%s','%s','%s',10000)" % (uid, uname, upw1, uphone, disabled)
     cursor = connection.cursor()
     cursor.execute(query)
 
@@ -322,7 +351,7 @@ def busform(request):
         for i, val in enumerate(numList):
             busdic.append([idlist[i].text, numList[i].text])
 
-        return render(request, 'takeonoff/bus.html', {'busdic':busdic, 'bookmark':rst})
+        return render(request, 'takeonoff/bus.html', {'busnum':busnum, 'busdic':busdic, 'bookmark':rst})
     else:
         return render(request, 'takeonoff/bus.html', {'bookmark':rst})
 
@@ -367,8 +396,6 @@ def stopform(request):
         bookmark = row.fetchone()
         print(bookmark)
         return render(request, 'takeonoff/onoffstop.html', {'bookmark': bookmark, 'type':'B'})
-
-
 
 # 선결제 페이지
 def prepayform(request):
@@ -491,6 +518,13 @@ def readyform (request):
     mid = request.session['mid']
     print("readyform mid:" + str(mid))
 
+    # 현재 작업중인 ulid 등록
+    query = "select handicap from megabus_member where mid =%d" % int(mid)
+    print("readyform query : " + query)
+    cursor = connection.cursor()
+    row = cursor.execute(query)
+    handi = row.fetchone()[0]
+
     # 버스노선 이용내역
     query = "select ulid, bnname, onbsname, offbsname, usedate from megabus_uselist " \
             "where mid=%d and status='N' order by usedate desc;" % int(mid)
@@ -499,7 +533,7 @@ def readyform (request):
     row = cursor.execute(query)
     rst = row.fetchall()
 
-    dic = {'mid': mid, 'rstlst': rst}
+    dic = {'mid': mid, 'rstlst': rst, 'handi':handi}
 
     return render(request, 'takeonoff/readyform.html', dic)
 
@@ -509,6 +543,8 @@ def ready(request):
     print("ready mid:" + str(mid))
     useid = request.POST['ulid']
     print("ready useid:" + str(useid))
+    hsvc = request.POST['hsvc']
+    print("ready hsvc:" + str(hsvc))
 
     # 버스노선 이용내역
     query = "select brid, bnname, onbsid, onord, offbsid, offord from megabus_uselist " \
@@ -571,7 +607,7 @@ def ready(request):
         connection.commit()
 
     # 이용건의 이용상태 승차대기 및 탑승 예정버스 아이디  변경
-    query = "update megabus_uselist set status='R', bnid=%d where ulid=%d ;" % (int(vehid), int(useid))
+    query = "update megabus_uselist set status='R', bnid=%d, handisvc='%s' where ulid=%d ;" % (int(vehid), hsvc, int(useid))
     print(query)
     cursor = connection.cursor()
     cursor.execute(query)

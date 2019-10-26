@@ -21,6 +21,26 @@
 
         document.bmForm.submit();
     }
+
+    function srchbus() {
+        if (document.searchform.busnum.value=="") {
+            alert("검색할 버스번호를 입력해주세요.");
+
+            return false;
+        }
+        return true;
+
+    }
+
+    function gonext() {
+        if (document.stopform.brid.value=="") {
+            alert("버스번호를 선택해주세요");
+
+            return false;
+        }
+        return true;
+
+    }
 </script>
 <body>
     <p class="aa"> <strong>승차정보 선택</strong> </p>
@@ -35,8 +55,8 @@
     </tr>
     <tr>
         <td>
-            <form name="searchform" action="/megabus/takeonoff/busform" method="post">{% csrf_token %}
-                <input type="text" name="busnum" value="">&nbsp;
+            <form name="searchform" action="/megabus/takeonoff/busform" method="post" onsubmit="srchbus()">{% csrf_token %}
+                <input type="text" name="busnum" value="{{ busnum }}" placeholder="버스번호 입력">&nbsp;
                 <button type="submit">검색</button>
             </form>
         </td>
@@ -48,6 +68,7 @@
     <tr>
         <td>
             <select onchange="setbus(this);">
+                <option value="" selected>선택해주세요.</option>
                 {% for item in busdic %}
                 <option value="{{ item.0 }}">{{ item.1 }}</option>
                 {% endfor %}
@@ -59,7 +80,7 @@
     </tr>
     <tr>
         <td align="center">
-            <form name="stopform" action="/megabus/takeonoff/stopform" method="post">{% csrf_token %}
+            <form name="stopform" action="/megabus/takeonoff/stopform" method="post" onsubmit="return gonext()">{% csrf_token %}
                 <input type="hidden" name="bnum" value="">
                 <input type="hidden" name="brid" value="">
                 <button type="submit">다음</button>

@@ -8,9 +8,14 @@
 <link rel="stylesheet" href="{% static 'css/style.css' %}" type="text/css">
 <script>
     function selectready(id, bnum) {
-
         document.frm.ulid.value = id;
         document.frm.bnum.value = bnum;
+
+        if (document.frm.handi.value=='Y') {
+            if (confirm("장애인 서비스를 신청하시겠습니까")) {
+                document.frm.hsvc.value='Y';
+            }
+        }
 
         document.frm.submit();
     }
@@ -20,6 +25,8 @@
     <form name="frm" action="/megabus/takeonoff/ready" method="post">{% csrf_token %}
         <input type="hidden" name="ulid" value="">
         <input type="hidden" name="bnum" value="">
+        <input type="hidden" name="handi" value="{{ handi }}">
+        <input type="hidden" name="hsvc" value="N">
         <table class="list">
             <tr bgcolor="#E8D9FF">
                 <td align="center">등록일</td>
